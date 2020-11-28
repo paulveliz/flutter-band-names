@@ -38,15 +38,30 @@ class _HomeState extends State<Home> {
     );
   }
 
-  ListTile bandTile(Band banda) {
-    return ListTile(
-      title: Text(banda.name),
-      trailing: Text('${banda.votes}', style: TextStyle(fontSize: 20)),
-        leading: CircleAvatar(
-          child: Text(banda.name.substring(0,2)),
-          backgroundColor: Colors.blue[100],
+  Widget bandTile(Band banda) {
+    return Dismissible(
+      key: Key(banda.id),
+      direction: DismissDirection.startToEnd,
+      onDismissed: ( direction ){
+        // TODO: Llamar el borrado en el server.
+      },
+      background: Container(
+        padding: EdgeInsets.only(left: 10),
+        color: Colors.red,
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Text('Delete band', style: TextStyle(color: Colors.white)),
         ),
-        onTap: (){},
+      ),
+      child: ListTile(
+        title: Text(banda.name),
+        trailing: Text('${banda.votes}', style: TextStyle(fontSize: 20)),
+          leading: CircleAvatar(
+            child: Text(banda.name.substring(0,2)),
+            backgroundColor: Colors.blue[100],
+          ),
+          onTap: (){},
+      ),
     );
   }
 
