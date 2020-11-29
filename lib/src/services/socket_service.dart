@@ -32,5 +32,12 @@ class SocketService with ChangeNotifier {
       this._serverStatus = ServerStatus.Offline;
       notifyListeners();
     });
+
+    socket.on('nuevo-mensaje', ( payload ){
+      print('Nuevo-mensaje:');
+      print(payload['nombre']);
+      print(payload['mensaje']);
+      print(payload['mensaje2']);
+    });
   }
 }
