@@ -1,8 +1,9 @@
 import 'dart:io';
-
 import 'package:bandnamesapp/src/models/band.dart';
+import 'package:bandnamesapp/src/services/socket_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class Home extends StatefulWidget {
   @override
@@ -10,21 +11,49 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+
+  @override
+  void initState() { 
+    final socketService = Provider.of<SocketService>(context, listen: false);
+    socketService.socket.on('active-bands', ( payload ) {
+      this.bands = (payload as List).map( (band){
+        return Band.fromMap(band);
+      }).toList();
+      setState(() {});
+    });
+    super.initState();
+  }
+  
+  @override
+  void dispose(){
+    final socketService = Provider.of<SocketService>(context, listen: false);
+    socketService.socket.off('active-bands');
+    super.dispose();
+  }
+
   List<Band> bands = [
-    new Band(id: '1', name: 'Metallica', votes: 5),
-    new Band(id: '2', name: 'Guns And Roses', votes: 4),
-    new Band(id: '3', name: 'Post malone', votes: 1),
-    new Band(id: '4', name: 'Trippie redd', votes: 5),
-    new Band(id: '5', name: '6ix9ine', votes: 1)
+    // new Band(id: '1', name: 'Metallica', votes: 5),
+    // new Band(id: '2', name: 'Guns And Roses', votes: 4),
+    // new Band(id: '3', name: 'Post malone', votes: 1),
+    // new Band(id: '4', name: 'Trippie redd', votes: 5),
+    // new Band(id: '5', name: '6ix9ine', votes: 1)
   ];
 
   @override
   Widget build(BuildContext context) {
+    final socketService = Provider.of<SocketService>(context);
+    
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 1,
         title: Text('BandNames', style: TextStyle(color: Colors.black87)),
+        actions: [
+          Container(
+            margin: EdgeInsets.only(right: 10),
+            child: socketService.serverStatus != ServerStatus.Online ? Icon(Icons.offline_bolt, color: Colors.red) : Icon(Icons.check_circle, color: Colors.blue[300])
+          )
+        ],
       ),
       body: ListView.builder(
         itemCount: bands.length,
@@ -66,8 +95,10 @@ class _HomeState extends State<Home> {
   }
 
   addNewBand(){
+
     final textController = new TextEditingController();
     if( Platform.isAndroid ){
+
       showDialog(
         context: context,
         builder: ( context ) {
@@ -87,7 +118,9 @@ class _HomeState extends State<Home> {
           );
         }
       );
+
     }else{
+
       showCupertinoDialog(
         context: context, 
         builder: (_){
@@ -111,6 +144,7 @@ class _HomeState extends State<Home> {
           );
         }
       );
+
     }
   }
 
