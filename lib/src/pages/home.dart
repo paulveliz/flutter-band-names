@@ -3,6 +3,7 @@ import 'package:bandnamesapp/src/models/band.dart';
 import 'package:bandnamesapp/src/services/socket_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:pie_chart/pie_chart.dart';
 import 'package:provider/provider.dart';
 
 class Home extends StatefulWidget {
@@ -31,13 +32,7 @@ class _HomeState extends State<Home> {
     super.dispose();
   }
 
-  List<Band> bands = [
-    // new Band(id: '1', name: 'Metallica', votes: 5),
-    // new Band(id: '2', name: 'Guns And Roses', votes: 4),
-    // new Band(id: '3', name: 'Post malone', votes: 1),
-    // new Band(id: '4', name: 'Trippie redd', votes: 5),
-    // new Band(id: '5', name: '6ix9ine', votes: 1)
-  ];
+  List<Band> bands = [];
 
   @override
   Widget build(BuildContext context) {
@@ -55,9 +50,16 @@ class _HomeState extends State<Home> {
           )
         ],
       ),
-      body: ListView.builder(
-        itemCount: bands.length,
-        itemBuilder: (_, i) => bandTile(bands[i])
+      body: Column(
+        children: [
+          _showGraph(),
+          Expanded(
+            child: ListView.builder(
+              itemCount: bands.length,
+              itemBuilder: (_, i) => bandTile(bands[i])
+            ),
+          )
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
@@ -68,11 +70,13 @@ class _HomeState extends State<Home> {
   }
 
   Widget bandTile(Band banda) {
+    final socketService = Provider.of<SocketService>(context, listen: false);
+
     return Dismissible(
       key: Key(banda.id),
       direction: DismissDirection.startToEnd,
       onDismissed: ( direction ){
-        // TODO: Llamar el borrado en el server.
+          socketService.emit('delete-band', {'id': banda.id});
       },
       background: Container(
         padding: EdgeInsets.only(left: 10),
@@ -89,7 +93,9 @@ class _HomeState extends State<Home> {
             child: Text(banda.name.substring(0,2)),
             backgroundColor: Colors.blue[100],
           ),
-          onTap: (){},
+          onTap: (){
+            socketService.emit('vote-band', { 'id': banda.id });
+          },
       ),
     );
   }
@@ -150,12 +156,61 @@ class _HomeState extends State<Home> {
 
   void addBandToList(String name){
     if(name.length > 1){
-      this.bands.add(new Band(id: DateTime.now().toString(), name: name, votes: 4));
-      setState(() {});
+      final socketService = Provider.of<SocketService>(context, listen: false);
+      socketService.emit('add-band', {'nombre': name});
+      // socketService.socket.on('active-bands', ( payload ) {
+      //   this.bands = (payload as List).map( (band){
+      //     return Band.fromMap(band);
+      //   }).toList();
+      //   setState(() {});
+      // });
+
       Navigator.of(context).pop();
     }else{
       Navigator.of(context).pop();
     }
+  }
+
+  Widget _showGraph() {
+    Map<String, double> dataMap = new Map();
+    bands.forEach((e) {
+      dataMap.putIfAbsent(e.name, () => e.votes.toDouble() );
+    });
+      List<Color> colorList = [
+      Colors.red,
+      Colors.green,
+      Colors.blue,
+      Colors.yellow,
+    ];
+    return Container(
+      padding: EdgeInsets.all(10.0),
+      child: PieChart(
+        dataMap: dataMap,
+        animationDuration: Duration(milliseconds: 800),
+        chartLegendSpacing: 32,
+        chartRadius: MediaQuery.of(context).size.width / 3.2,
+        colorList: colorList,
+        initialAngleInDegree: 0,
+        chartType: ChartType.ring,
+        ringStrokeWidth: 32,
+        centerText: "HYBRID",
+        legendOptions: LegendOptions(
+          showLegendsInRow: false,
+          legendPosition: LegendPosition.right,
+          showLegends: true,
+          legendShape: BoxShape.circle,
+          legendTextStyle: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        chartValuesOptions: ChartValuesOptions(
+          showChartValueBackground: true,
+          showChartValues: true,
+          showChartValuesInPercentage: false,
+          showChartValuesOutside: false,
+        ),
+      ),
+    );
   }
 
 }
